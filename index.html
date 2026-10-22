@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcoTrace | Transparent Recycling Tracker</title>
+<style>
+:root{--green:#087f5b;--green2:#2f9e44;--ink:#18352c;--muted:#66756f;--bg:#f3f8f4;--line:#dce8df}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:linear-gradient(120deg,#064e3b,#16845b);color:white;padding:28px 20px}
+.wrap{max-width:1080px;margin:auto}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:48px;height:48px;display:grid;place-items:center;background:#ffffff20;border:1px solid #ffffff55;border-radius:15px;font-size:26px}
+h1{margin:0;font-size:clamp(1.8rem,4vw,2.5rem)}
+header p{margin:7px 0 0;color:#d7f5e3}
+main{padding:24px 20px 50px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.card,.panel{background:white;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 5px 18px #173c2410}
+.stat-label{color:var(--muted);font-size:.9rem}
+.stat-number{font-size:2rem;font-weight:750;margin-top:4px}
+.layout{display:grid;grid-template-columns:minmax(270px,.85fr) minmax(0,1.4fr);gap:18px;align-items:start}
+h2{font-size:1.2rem;margin:0 0 14px}
+label{display:block;font-size:.9rem;font-weight:650;margin:13px 0 6px}
+input,select{width:100%;border:1px solid #cbd9cf;border-radius:10px;padding:11px 12px;font:inherit;color:var(--ink);background:white}
+input:focus,select:focus{outline:2px solid #74c69d;border-color:var(--green)}
+button{border:0;border-radius:10px;padding:11px 14px;background:var(--green);color:white;font:inherit;font-weight:700;cursor:pointer}
+button:hover{background:#066649}
+button:disabled{opacity:.55;cursor:wait}
+button.secondary{background:#e6f4eb;color:#075b43}
+button.secondary:hover{background:#d3ebdc}
+button.danger{background:#fff0ee;color:#a12a20}
+.full{width:100%;margin-top:16px}
+.small{font-size:.84rem;color:var(--muted);line-height:1.45}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.records{display:grid;gap:10px}
+.record{border:1px solid var(--line);border-radius:13px;padding:13px}
+.record-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pill{display:inline-block;padding:4px 8px;border-radius:99px;font-size:.75rem;font-weight:750;background:#e5f5e9;color:#176b3a}
+.pill.pending{background:#fff3d6;color:#8b5e00}
+.record-meta{color:var(--muted);font-size:.84rem;margin-top:6px;overflow-wrap:anywhere}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed #cbd9cf;border-radius:13px}
+.notice{margin-top:16px;border-left:4px solid #e0a82e;background:#fff9e8;padding:12px 14px;border-radius:8px;color:#6c5314;font-size:.85rem}
+.verify-result{display:none;padding:13px 14px;border-radius:12px;margin:0 0 12px;font-size:.9rem;line-height:1.5;overflow-wrap:anywhere}
+.verify-result.good{display:block;background:#e8f7ec;border:1px solid #a9dfb7;color:#14532d}
+.verify-result.bad{display:block;background:#fff0ee;border:1px solid #f0b7b1;color:#8b1e16}
+.verify-result.neutral{display:block;background:#edf5ff;border:1px solid #c5dcfa;color:#17477c}
+footer{text-align:center;color:var(--muted);font-size:.82rem;padding:0 20px 26px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.stat-number{font-size:1.65rem}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="brand"><div class="mark" aria-hidden="true">♻</div><div><h1>EcoTrace</h1><p>Transparent Recycling Tracker · Small actions, big impact.</p></div></div></div></header>
+<main class="wrap">
+  <section class="stats" aria-label="Recycling summary">
+    <div class="card"><div class="stat-label">Total waste recorded</div><div class="stat-number" id="total">0 kg</div></div>
+    <div class="card"><div class="stat-label">Recycled</div><div class="stat-number" id="recycled">0 kg</div></div>
+    <div class="card"><div class="stat-label">Awaiting recycling</div><div class="stat-number" id="pending">0 kg</div></div>
+  </section>
+  <div class="layout">
+    <section class="panel">
+      <h2>＋ Add a waste collection</h2>
+      <form id="wasteForm">
+        <label for="material">Material type</label>
+        <select id="material" required><option>Plastic</option><option>Paper</option><option>Metal</option><option>Glass</option><option>E-waste</option><option>Organic</option></select>
+        <label for="quantity">Quantity (kg)</label><input id="quantity" type="number" min="0.1" max="100000" step="0.1" placeholder="e.g. 2.5" required>
+        <label for="location">Collection location</label><input id="location" maxlength="80" placeholder="e.g. College canteen" required>
+        <label for="status">Current status</label><select id="status"><option value="Pending">Awaiting recycling</option><option value="Recycled">Recycled</option></select>
+        <button class="full" type="submit">Add record</button>
+      </form>
+      <p class="small">Demo data is saved in this browser on this device. There is no account or server.</p>
+      <div class="notice"><strong>Prototype limitation:</strong> SHA-256 hash links help demonstrate tamper-evident records. This is not a live blockchain or independent verification service.</div>
+    </section>
+    <section class="panel">
+      <h2>Collection records</h2>
+      <div class="toolbar">
+        <button type="button" class="secondary" id="verifyBtn">Verify records</button>
+        <button type="button" class="secondary" id="demoBtn">Load demo data</button>
+        <button type="button" class="secondary" id="exportBtn">Export JSON</button>
+        <button type="button" class="danger" id="clearBtn">Clear records</button>
+      </div>
+      <div id="verifyResult" class="verify-result" role="status" aria-live="polite"></div>
+      <div id="records" class="records"><div class="empty">No records yet. Add your first collection!</div></div>
+    </section>
+  </div>
+</main>
+<footer>EcoTrace prototype · Responsible recycling and transparent record keeping.</footer>
+<script>
+const STORAGE_KEY = "ecotrace_records_v1";
+let records = [];
+const $ = id => document.getElementById(id);
+const kg = value => `${Number(value).toLocaleString(undefined,{maximumFractionDigits:2})} kg`;
+
+/*
+ * IMPORTANT: Keep these fields in this order. The original starter version
+ * hashed JSON.stringify(record) before adding the `hash` property. This
+ * payload format is compatible with records created by that earlier version.
+ */
+function hashPayload(record) {
+  return {
+    id: record.id,
+    material: record.material,
+    quantity: Number(record.quantity),
+    location: record.location,
+    status: record.status,
+    timestamp: record.timestamp,
+    previousHash: record.previousHash
+  };
+}
+async function sha256(text) {
+  if (!window.crypto || !crypto.subtle) {
+    throw new Error("Web Crypto is unavailable. Open the site at http://localhost:8000 or use a modern browser.");
+  }
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+async function makeRecord(material, quantity, location, status, previousHash) {
+  const record = {
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    material, quantity:Number(quantity), location, status,
+    timestamp:new Date().toISOString(),
+    previousHash:previousHash || "GENESIS"
+  };
+  record.hash = await sha256(JSON.stringify(hashPayload(record)));
+  return record;
+}
+async function addRecord(material, quantity, location, status) {
+  const previousHash = records.length ? records[records.length - 1].hash : "GENESIS";
+  records.push(await makeRecord(material, quantity, location, status, previousHash));
+  saveAndRender();
+  showVerification("", "");
+}
+function saveAndRender() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  render();
+}
+function render() {
+  const total = records.reduce((sum,r)=>sum+Number(r.quantity||0),0);
+  const recycled = records.filter(r=>r.status==="Recycled").reduce((sum,r)=>sum+Number(r.quantity||0),0);
+  $("total").textContent=kg(total);
+  $("recycled").textContent=kg(recycled);
+  $("pending").textContent=kg(total-recycled);
+  const root=$("records");
+  if (!records.length) {
+    root.innerHTML='<div class="empty">No records yet. Add your first collection!</div>';
+    return;
+  }
+  root.innerHTML="";
+  [...records].reverse().forEach(r=>{
+    const article=document.createElement("article"); article.className="record";
+    const top=document.createElement("div"); top.className="record-top";
+    const title=document.createElement("strong"); title.textContent=`${r.material} · ${kg(r.quantity)}`;
+    const pill=document.createElement("span"); pill.className=`pill${r.status==="Pending"?" pending":""}`;
+    pill.textContent=r.status==="Recycled"?"Recycled":"Awaiting recycling";
+    top.append(title,pill);
+    const meta=document.createElement("div"); meta.className="record-meta";
+    meta.textContent=`${r.location} · ${new Date(r.timestamp).toLocaleString()}`;
+    const hash=document.createElement("div"); hash.className="record-meta";
+    hash.textContent=`SHA-256: ${String(r.hash||"MISSING").slice(0,20)}… · Previous: ${String(r.previousHash||"MISSING").slice(0,12)}…`;
+    article.append(top,meta,hash); root.append(article);
+  });
+}
+function showVerification(kind,message) {
+  const box=$("verifyResult");
+  box.className="verify-result";
+  if (!kind) { box.textContent=""; return; }
+  box.classList.add(kind);
+  box.textContent=message;
+}
+async function verifyRecords() {
+  const btn=$("verifyBtn"); btn.disabled=true; btn.textContent="Verifying…";
+  try {
+    if (!records.length) {
+      showVerification("neutral","No records to verify yet. Add a record or load demo data first.");
+      return;
+    }
+    const problems=[];
+    let expectedPrevious="GENESIS";
+    for (let i=0;i<records.length;i++) {
+      const record=records[i];
+      if (record.previousHash !== expectedPrevious) {
+        problems.push(`Record ${i+1} (${record.material}) has an incorrect previous-hash link.`);
+      }
+      const recalculated=await sha256(JSON.stringify(hashPayload(record)));
+      if (record.hash !== recalculated) {
+        problems.push(`Record ${i+1} (${record.material}) hash does not match its contents.`);
+      }
+      expectedPrevious=record.hash || "";
+    }
+    if (problems.length) {
+      showVerification("bad",`Verification FAILED: ${problems.length} issue(s) found.\n${problems.join(" ")}`);
+    } else {
+      showVerification("good",`Verification passed: all ${records.length} record(s) have matching SHA-256 hashes and correct previous-hash links.`);
+    }
+  } catch (error) {
+    showVerification("bad",`Could not verify records: ${error.message}`);
+  } finally {
+    btn.disabled=false; btn.textContent="Verify records";
+  }
+}
+$("wasteForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const material=$("material").value, quantity=Number($("quantity").value), location=$("location").value.trim(), status=$("status").value;
+  if (!Number.isFinite(quantity)||quantity<=0||!location) return;
+  const btn=event.submitter; btn.disabled=true; btn.textContent="Adding…";
+  try { await addRecord(material,quantity,location,status); $("wasteForm").reset(); }
+  catch(error) { showVerification("bad",`Could not create hash: ${error.message}`); }
+  finally { btn.disabled=false; btn.textContent="Add record"; }
+});
+$("verifyBtn").addEventListener("click",verifyRecords);
+$("demoBtn").addEventListener("click",async()=>{
+  if(records.length&&!confirm("Add demo entries to the current records?"))return;
+  const btn=$("demoBtn");btn.disabled=true;
+  try {
+    await addRecord("Plastic",10,"College canteen","Recycled");
+    await addRecord("Paper",15,"Library","Pending");
+    await addRecord("Metal",4.5,"Workshop","Recycled");
+    showVerification("neutral","Demo entries added. Click Verify records to check their hashes and links.");
+  } catch(error) { showVerification("bad",`Could not add demo data: ${error.message}`); }
+  finally { btn.disabled=false; }
+});
+$("exportBtn").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(records,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download="ecotrace-records.json";a.click();URL.revokeObjectURL(url);
+});
+$("clearBtn").addEventListener("click",()=>{
+  if(!confirm("Clear all EcoTrace records from this browser? This cannot be undone."))return;
+  records=[];saveAndRender();showVerification("neutral","All local records were cleared.");
+});
+try { records=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); if(!Array.isArray(records))records=[]; }
+catch(error) { records=[]; console.error("Could not load saved records",error); }
+render();
+</script>
+</body>
+</html>
